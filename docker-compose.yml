@@ -1,0 +1,26 @@
+services:
+  xiaoyu-agent-gateway:
+    build:
+      context: ./backend
+    ports:
+      - "8080:8080"
+    environment:
+      OPENAI_API_BASE: ${OPENAI_API_BASE:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      BUILT_IN_FORGE_API_URL: ${BUILT_IN_FORGE_API_URL:-}
+      BUILT_IN_FORGE_API_KEY: ${BUILT_IN_FORGE_API_KEY:-}
+      XIAOYU_LLM_MODEL: ${XIAOYU_LLM_MODEL:-gpt-5-mini}
+      XIAOYU_SUNA_API_URL: ${XIAOYU_SUNA_API_URL:-}
+      PYTHONPATH: /app:/opt/openmanus
+    volumes:
+      - ./vendor/openmanus:/opt/openmanus:ro
+      - ./vendor/crewai:/opt/crewai:ro
+    restart: unless-stopped
+
+  # Optional Suna services are kept as explicit integration slots. They can be
+  # enabled against the full upstream self-host compose when a Docker host is
+  # available; GitHub Pages never receives these secrets.
+  # suna-api:
+  #   build: ./vendor/suna/apps/api
+  # suna-web:
+  #   build: ./vendor/suna/apps/web

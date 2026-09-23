@@ -1,0 +1,9 @@
+[submodule "vendor/suna"]
+	path = vendor/suna
+	url = https://github.com/kortix-ai/suna.git
+[submodule "vendor/crewai"]
+	path = vendor/crewai
+	url = https://github.com/crewAIInc/crewAI.git
+[submodule "vendor/openmanus"]
+	path = vendor/openmanus
+	url = https://github.com/FoundationAgents/OpenManus.git

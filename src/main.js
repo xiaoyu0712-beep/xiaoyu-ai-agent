@@ -76,6 +76,19 @@ function bindEvents() {
   document.querySelectorAll('[data-nav]').forEach(b => b.onclick = () => { state.activeNav = b.dataset.nav; render(); });
   document.querySelector('[data-action="toggle-right"]')?.addEventListener('click', () => { state.rightOpen = !state.rightOpen; render(); });
   const input = document.querySelector('#prompt'); input?.addEventListener('input', e => state.prompt = e.target.value);
-  document.querySelector('[data-action="run"]')?.addEventListener('click', () => { if (!state.prompt.trim()) { state.message = '請先描述你想完成的任務。'; render(); return; } state.running = true; state.message = '已建立任務流程：研究 → 規劃 → 執行 → 回報'; render(); setTimeout(() => { state.running = false; state.message = '任務流程已準備完成，右側面板會持續顯示每個部分的進度。'; render(); }, 1800); });
+  document.querySelector('[data-action="run"]')?.addEventListener('click', async () => {
+    if (!state.prompt.trim()) { state.message = '請先描述你想完成的任務。'; render(); return; }
+    state.running = true; state.message = '已建立任務流程：Manus LLM 規劃 → CrewAI 分發 → OpenManus 工具執行'; render();
+    const base = (window.XIAOYU_API_BASE || import.meta.env.VITE_XIAOYU_API_BASE || '').replace(/\/$/, '');
+    if (!base) { state.message = '前端已完成 Gateway 接線；請設定 VITE_XIAOYU_API_BASE 後啟用真實後端。'; state.running = false; render(); return; }
+    try {
+      const response = await fetch(`${base}/api/runs`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ goal: state.prompt, engine: 'hybrid' }) });
+      if (!response.ok) throw new Error(`Gateway ${response.status}`);
+      const { run_id: runId } = await response.json();
+      const stream = new EventSource(`${base}/api/runs/${runId}/events`);
+      stream.onmessage = event => { const data = JSON.parse(event.data); state.message = data.message || data.step || data.summary || 'Agent 正在執行……'; if (data.event === 'completed' || data.event === 'failed') { state.running = false; stream.close(); } render(); };
+      stream.onerror = () => { state.running = false; state.message = 'Gateway 連線中斷，請查看後端執行紀錄。'; stream.close(); render(); };
+    } catch (error) { state.running = false; state.message = `無法連線 Xiaoyu Gateway：${error.message}`; render(); }
+  });
 }
 render();
